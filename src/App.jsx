@@ -1,13 +1,38 @@
 import React, { useState } from 'react';
+import { supabase } from './supabase'; // Make sure this points to your supabase.js
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('student'); // 'student' or 'teacher'
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log(`Logging in as ${role} with:`, email);
+    setLoading(true);
+
+    try {
+      // Query Supabase for the user matching email, password, and role
+      const { data, error } = await supabase
+        .from('users') // Adjust to your actual Supabase table name if different
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .eq('role', role)
+        .single();
+
+      if (error || !data) {
+        alert('Invalid login credentials or role mismatch. Please try again.');
+      } else {
+        alert(`Successfully logged in as ${data.role}: ${data.email}`);
+        // TODO: Redirect or load dashboard based on role here
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      alert('An error occurred during login. Check console for details.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -69,6 +94,7 @@ function App() {
           boxSizing: 'border-box',
           textAlign: 'left'
         }}>
+          {/* Dynamic title based on active tab */}
           <h2>{role === 'student' ? 'Student Login' : 'Teacher Login'}</h2>
           <p style={{ fontSize: '15px', marginBottom: '24px' }}>Enter your institutional email ID below.</p>
 
@@ -125,6 +151,7 @@ function App() {
 
             <button 
               type="submit" 
+              disabled={loading}
               style={{ 
                 marginTop: '8px',
                 background: 'var(--accent)', 
@@ -135,10 +162,11 @@ function App() {
                 fontWeight: 600, 
                 cursor: 'pointer',
                 fontSize: '16px',
-                transition: 'opacity 0.2s'
+                transition: 'opacity 0.2s',
+                opacity: loading ? 0.7 : 1
               }}
             >
-              Sign In
+              {loading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
         </div>
