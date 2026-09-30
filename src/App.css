@@ -1,281 +1,77 @@
-/* --- Global Reset & Fluid Setup --- */
-* {
-  box-sizing: border-box;
-}
-
+/* Global Mobile-First Layout Adjustments */
 body {
   margin: 0;
   padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f8fafc;
-  color: #0f172a;
-  -webkit-font-smoothing: antialiased;
-  width: 100vw;
+  color: #1e293b;
   overflow-x: hidden;
 }
 
-#root {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Responsive Main Containers */
+.home-container, .teacher-container, .student-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
 }
 
-/* --- Navigation Bar --- */
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.25rem 2.5rem;
-  background-color: #0f172a;
-  color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  width: 100%;
-}
-
-.navbar h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  margin: 0;
-}
-
-.navbar-links {
-  display: flex;
-  gap: 1.5rem;
-}
-
-.navbar-links a {
-  color: #cbd5e1;
-  text-decoration: none;
-  font-size: 0.95rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
-}
-
-.navbar-links a:hover {
-  color: #ffffff;
-}
-
-/* --- Full Screen Fluid Layout Containers --- */
-.home-page, 
-.portal-page {
-  width: 100%;
-  flex: 1;
-  margin: 0;
-  padding: 2.5rem 3rem;
-}
-
-.home-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.home-page h1,
-.portal-page h1 {
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin-bottom: 2rem;
-  letter-spacing: -0.025em;
+/* Responsive Headings */
+h1, .portal-title {
+  font-size: clamp(1.5rem, 4vw, 2.5rem); /* Scales automatically between mobile and PC */
+  line-height: 1.3;
   text-align: center;
-}
-
-/* --- Login Card --- */
-.login-card {
-  background: #ffffff;
-  padding: 3rem;
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
-  max-width: 480px;
-}
-
-.login-card label,
-.form-controls-row label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-}
-
-/* --- Explicit text color fix for inputs and selects --- */
-.login-card input,
-.form-controls-row input, 
-.form-controls-row select,
-.filter-section input {
-  width: 100%;
-  padding: 0.85rem 1rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  background-color: #ffffff;
-  color: #0f172a;
-  transition: all 0.2s ease;
-}
-
-.login-card input:focus,
-.form-controls-row input:focus, 
-.form-controls-row select:focus,
-.filter-section input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-/* --- Buttons --- */
-.submit-btn {
-  background-color: #0f172a;
-  color: white;
-  border: none;
-  padding: 0.85rem 1.25rem;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.submit-btn:hover {
-  background-color: #1e293b;
-}
-
-.submit-btn:active {
-  transform: scale(0.98);
-}
-
-/* --- Teacher & Student Portal Dashboards --- */
-.teacher-form-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  width: 100%;
-}
-
-.wide-portal {
-  max-width: 100% !important;
-}
-
-.form-controls-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  background: #ffffff;
-  padding: 1.75rem;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  border: 1px solid #e2e8f0;
-  width: 100%;
-}
-
-.filter-section {
-  display: flex;
-  gap: 1rem;
   margin-bottom: 1.5rem;
-  background: #ffffff;
-  padding: 1.25rem;
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
-  align-items: center;
+  font-weight: 700;
+}
+
+/* Responsive Login / Form Cards */
+.login-card, .attendance-card {
   width: 100%;
-}
-
-.filter-section input {
-  max-width: 400px;
-}
-
-/* --- Tables & Wrappers --- */
-.table-wrapper {
+  max-width: 450px;
+  margin: 0 auto;
+  padding: 1.5rem;
   background: #ffffff;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  border: 1px solid #e2e8f0;
-  overflow-x: auto;
-  width: 100%;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  box-sizing: border-box;
 }
 
-.attendance-table {
+/* Responsive Tables for Attendance Data */
+.table-container {
+  width: 100%;
+  overflow-x: auto; /* Adds smooth horizontal scrolling on small mobile screens */
+  margin-top: 1rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 500px; /* Ensures table columns don't crush on phones */
+}
+
+th, td {
+  padding: 0.75rem 1rem;
   text-align: left;
-  font-size: 0.95rem;
-}
-
-.attendance-table th, 
-.attendance-table td {
-  padding: 1.15rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.attendance-table th {
-  background-color: #f8fafc;
-  color: #475569;
-  font-weight: 600;
   border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9rem;
 }
 
-.attendance-table tbody tr:hover {
-  background-color: #f8fafc;
-}
+/* Media Query for Larger Desktop Screens */
+@media (min-width: 768px) {
+  .home-container, .teacher-container, .student-container {
+    padding: 2.5rem 2rem;
+  }
+  
+  .login-card, .attendance-card {
+    padding: 2.5rem;
+  }
 
-/* --- Status Toggles & Badges --- */
-.status-toggle-btn {
-  padding: 0.45rem 1.15rem;
-  border: none;
-  border-radius: 9999px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 0.85rem;
-  transition: opacity 0.2s ease;
-}
-
-.status-toggle-btn.present {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.status-toggle-btn.absent {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.status-toggle-btn:hover {
-  opacity: 0.85;
-}
-
-.final-submit {
-  width: 100%;
-  padding: 1.15rem;
-  font-size: 1.05rem;
-  margin-top: 1rem;
-}
-
-.student-summary {
-  background: #ffffff;
-  padding: 1.5rem 2rem;
-  border-radius: 1rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  gap: 3rem;
-  align-items: center;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
-  width: 100%;
-}
-
-.student-summary h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.15rem;
-  color: #0f172a;
-}
-
-.student-summary p {
-  margin: 0;
-  color: #475569;
-  font-size: 0.95rem;
+  th, td {
+    font-size: 1rem;
+    padding: 1rem;
+  }
 }
