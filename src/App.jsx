@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sectionsData } from './data/students';
 
 function App() {
@@ -7,23 +7,68 @@ function App() {
   const [role, setRole] = useState('student');
   const [user, setUser] = useState(null);
 
-  // Teacher Dashboard interactive state
-  const [selectedCourse, setSelectedCourse] = useState('CSE - Web Tech (CS501)');
+  // Teacher Dashboard timetable-aligned state
+  const [selectedDay, setSelectedDay] = useState('THU'); // Default to Thursday based on current mock date context
+  const [selectedSlot, setSelectedSlot] = useState('09:00 AM - 10:00 AM');
+  const [selectedCourse, setSelectedCourse] = useState('Software Engineering & Project Management (SE&PM - BCS501)');
   const [selectedSection, setSelectedSection] = useState('Section A');
   const [attendance, setAttendance] = useState({});
-  const currentDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  // Timetable slots mapped with start times (24h format)
+  const slotTimings = {
+    '09:00 AM - 10:00 AM': { startHour: 9, startMin: 0 },
+    '10:00 AM - 11:00 AM': { startHour: 10, startMin: 0 },
+    '11:15 AM - 12:15 PM': { startHour: 11, startMin: 15 },
+    '12:15 PM - 01:15 PM': { startHour: 12, startMin: 15 },
+    '02:05 PM - 03:00 PM': { startHour: 14, startMin: 5 },
+    '03:00 PM - 04:00 PM': { startHour: 15, startMin: 0 },
+    '04:00 PM - 05:00 PM': { startHour: 16, startMin: 0 },
+  };
+
+  const displayDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   // Student Portal Search State
   const [searchSRN, setSearchSRN] = useState('');
   const [filterSubject, setFilterSubject] = useState('All');
   const [hasSearched, setHasSearched] = useState(false);
 
-  // Student subject-wise records
+  // Official RIT 5th Semester Subjects & Labs from timetable
   const studentRecords = [
-    { subject: 'CSE - Web Tech (CS501)', attended: 22, total: 25 },
-    { subject: 'CSE - Database Systems (CS502)', attended: 20, total: 24 },
-    { subject: 'CSE - Operating Systems (CS503)', attended: 24, total: 25 }
+    { subject: 'Software Engineering & Project Management (SE&PM - BCS501)', attended: 22, total: 25 },
+    { subject: 'Computer Networks (CN - BCS502)', attended: 20, total: 24 },
+    { subject: 'Theory of Computation (TOC - BCS503)', attended: 24, total: 25 },
+    { subject: 'Web Technology Lab (WEB LAB - BCSL504)', attended: 12, total: 12 },
+    { subject: 'Artificial Intelligence (AI - BCS515B)', attended: 19, total: 22 },
+    { subject: 'Research Methodology (RM - BCS507)', attended: 15, total: 16 },
+    { subject: 'Environmental Studies (ES - BCS508)', attended: 14, total: 15 }
   ];
+
+  // Window Check: Opens at class start time, Locks 15 minutes after class begins (e.g. 9:00 to 9:15 AM)
+  const getWindowStatus = () => {
+    const timing = slotTimings[selectedSlot];
+    if (!timing) return { status: 'CLOSED', message: 'Invalid slot' };
+
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMin = now.getMinutes();
+    const currentTimeVal = currentHour * 60 + currentMin;
+
+    // Open time: Exact start time
+    let openMinTotal = timing.startHour * 60 + timing.startMin;
+    // Lock time: Start time + 15 mins
+    let lockMinTotal = openMinTotal + 15;
+
+    if (currentTimeVal < openMinTotal) {
+      return { status: 'NOT_OPEN_YET', message: '🔒 Attendance opens when class starts' };
+    } else if (currentTimeVal > lockMinTotal) {
+      return { status: 'LOCKED', message: '🔒 Attendance locked (15 mins past class start)' };
+    } else {
+      return { status: 'ACTIVE', message: '🟢 Active (Locks 15 mins after start)' };
+    }
+  };
+
+  const windowState = getWindowStatus();
+  const isActionDisabled = windowState.status !== 'ACTIVE';
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -39,10 +84,24 @@ function App() {
   };
 
   const toggleAttendance = (studentId) => {
+    if (isActionDisabled) {
+      alert(`Cannot modify: ${windowState.message}`);
+      return;
+    }
+
     setAttendance(prev => ({
       ...prev,
       [studentId]: prev[studentId] === 'Absent' ? 'Present' : 'Absent'
     }));
+  };
+
+  const handleSaveAttendance = () => {
+    if (isActionDisabled) {
+      alert(`Cannot save: ${windowState.message}`);
+      return;
+    }
+
+    alert(`Attendance for ${selectedSection} (${selectedCourse} | ${selectedSlot}) saved successfully!`);
   };
 
   const handleStudentSearch = (e) => {
@@ -54,12 +113,12 @@ function App() {
     setHasSearched(true);
   };
 
-  // Calculate overall aggregated attendance stats
+  // Calculate overall aggregate attendance
   const totalAttendedAll = studentRecords.reduce((acc, curr) => acc + curr.attended, 0);
   const totalClassesAll = studentRecords.reduce((acc, curr) => acc + curr.total, 0);
   const overallPercentage = totalClassesAll > 0 ? ((totalAttendedAll / totalClassesAll) * 100).toFixed(1) : 0;
 
-  // 1. Student Portal View with SRN & Subject Search
+  // 1. Student Portal View
   if (user && user.role === 'student') {
     const filteredRecords = filterSubject === 'All' 
       ? studentRecords 
@@ -77,7 +136,6 @@ function App() {
           <h1 style={{ fontSize: '24px', marginBottom: '4px' }}>Student Dashboard</h1>
           <p style={{ marginBottom: '24px', color: 'var(--text)', fontSize: '14px' }}>Logged in as: {user.email}</p>
 
-          {/* SRN Lookup Card */}
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '24px' }}>
             <h2 style={{ fontSize: '18px', marginBottom: '12px' }}>Search Attendance Record</h2>
             <form onSubmit={handleStudentSearch} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '12px' }}>
@@ -98,7 +156,6 @@ function App() {
             </form>
           </div>
 
-          {/* Search Results */}
           {hasSearched && (
             <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -120,7 +177,6 @@ function App() {
                 </div>
               </div>
 
-              {/* Overall Summary Card if "All" is selected */}
               {filterSubject === 'All' && (
                 <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '16px 20px', borderRadius: '8px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
@@ -156,7 +212,7 @@ function App() {
     );
   }
 
-  // 2. Teacher Portal View (Fully populated with sections, courses, date, and roster)
+  // 2. Teacher Portal View (Timetable aligned with 15-min lock rule)
   if (user && user.role === 'teacher') {
     const currentStudents = sectionsData?.[selectedSection] || [
       { id: 1, name: 'Aarav Sharma', roll: '01' },
@@ -168,7 +224,7 @@ function App() {
     return (
       <div id="root">
         <header style={{ padding: '20px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontWeight: 600, color: 'var(--text-h)', fontSize: '1rem' }}>RIT Teacher Portal</div>
+          <div style={{ fontWeight: 600, color: 'var(--text-h)', fontSize: '1rem' }}>RIT Teacher Portal &bull; 5th Sem "B"</div>
           <button onClick={handleLogout} style={{ background: 'var(--code-bg)', color: 'var(--text-h)', border: '1px solid var(--border)', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '14px' }}>
             Sign Out
           </button>
@@ -180,31 +236,47 @@ function App() {
               <p style={{ color: 'var(--text)', fontSize: '14px' }}>Logged in as Professor: {user.email}</p>
             </div>
             <div style={{ background: 'var(--code-bg)', border: '1px solid var(--border)', padding: '8px 14px', borderRadius: '8px', fontSize: '13px', color: 'var(--text-h)', fontWeight: 500 }}>
-              Date: {currentDate}
+              Date: {displayDate}
             </div>
           </div>
 
-          {/* Selectors Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '20px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px', color: 'var(--text-h)', fontWeight: 500 }}>Select Course</label>
+          {/* Timetable Selection Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
+              <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-h)', fontWeight: 500 }}>Day</label>
               <select 
-                value={selectedCourse} 
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '14px', outline: 'none' }}
+                value={selectedDay} 
+                onChange={(e) => setSelectedDay(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '13px', outline: 'none' }}
               >
-                <option>CSE - Web Tech (CS501)</option>
-                <option>CSE - Database Systems (CS502)</option>
-                <option>CSE - Operating Systems (CS503)</option>
+                <option value="MON">Monday</option>
+                <option value="TUE">Tuesday</option>
+                <option value="WED">Wednesday</option>
+                <option value="THU">Thursday</option>
+                <option value="FRI">Friday</option>
+                <option value="SAT">Saturday</option>
               </select>
             </div>
 
-            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '20px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
-              <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px', color: 'var(--text-h)', fontWeight: 500 }}>Select Section</label>
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
+              <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-h)', fontWeight: 500 }}>Time Slot</label>
+              <select 
+                value={selectedSlot} 
+                onChange={(e) => setSelectedSlot(e.target.value)}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '13px', outline: 'none' }}
+              >
+                {Object.keys(slotTimings).map(slot => (
+                  <option key={slot} value={slot}>{slot}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '16px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
+              <label style={{ display: 'block', fontSize: '12px', marginBottom: '6px', color: 'var(--text-h)', fontWeight: 500 }}>Section</label>
               <select 
                 value={selectedSection} 
                 onChange={(e) => setSelectedSection(e.target.value)}
-                style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '14px', outline: 'none' }}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '13px', outline: 'none' }}
               >
                 <option value="Section A">Section A</option>
                 <option value="Section B">Section B</option>
@@ -213,20 +285,62 @@ function App() {
             </div>
           </div>
 
+          {/* Subject Selector */}
+          <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '20px', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', marginBottom: '8px', color: 'var(--text-h)', fontWeight: 500 }}>Select Subject / Course / Lab</label>
+            <select 
+              value={selectedCourse} 
+              onChange={(e) => setSelectedCourse(e.target.value)}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--code-bg)', color: 'var(--text-h)', fontSize: '14px', outline: 'none' }}
+            >
+              <option>Software Engineering & Project Management (SE&PM - BCS501)</option>
+              <option>Computer Networks (CN - BCS502)</option>
+              <option>Theory of Computation (TOC - BCS503)</option>
+              <option>Web Technology Lab (WEB LAB - BCSL504)</option>
+              <option>Artificial Intelligence (AI - BCS515B)</option>
+              <option>Mini Project (PROJ - BCS586)</option>
+              <option>Research Methodology (RM - BCS507)</option>
+              <option>Environmental Studies (ES - BCS508)</option>
+              <option>Physical Education (PE - BCS509)</option>
+            </select>
+          </div>
+
           {/* Roster Card */}
           <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '24px', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>
                 <h2 style={{ fontSize: '18px', marginBottom: '4px' }}>Attendance Roster</h2>
-                <p style={{ fontSize: '13px', color: 'var(--text)' }}>{selectedSection} &bull; {selectedCourse}</p>
+                <p style={{ fontSize: '13px', color: 'var(--text)' }}>{selectedDay} | {selectedSlot} | {selectedSection}</p>
               </div>
-              <button 
-                onClick={() => alert(`Attendance for ${selectedSection} saved successfully!`)}
-                style={{ background: 'var(--text-h)', color: 'var(--bg)', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
-              >
-                Save Attendance
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '12px', color: windowState.status === 'ACTIVE' ? '#22c55e' : '#ef4444', fontWeight: 500 }}>
+                  {windowState.message}
+                </span>
+                <button 
+                  onClick={handleSaveAttendance}
+                  disabled={isActionDisabled}
+                  style={{ 
+                    background: isActionDisabled ? 'var(--code-bg)' : 'var(--text-h)', 
+                    color: isActionDisabled ? 'var(--text)' : 'var(--bg)', 
+                    border: 'none', 
+                    padding: '8px 16px', 
+                    borderRadius: '8px', 
+                    fontWeight: 600, 
+                    cursor: isActionDisabled ? 'not-allowed' : 'pointer', 
+                    fontSize: '14px',
+                    opacity: isActionDisabled ? 0.6 : 1
+                  }}
+                >
+                  Save Attendance
+                </button>
+              </div>
             </div>
+
+            {isActionDisabled && (
+              <div style={{ padding: '10px 14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '6px', marginBottom: '16px', color: '#ef4444', fontSize: '13px' }}>
+                Note: Attendance opens at class start time and is strictly locked 15 minutes after the class begins.
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {currentStudents.map(student => {
@@ -238,6 +352,7 @@ function App() {
                     </span>
                     <button 
                       onClick={() => toggleAttendance(student.id)}
+                      disabled={isActionDisabled}
                       style={{ 
                         background: status === 'Present' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                         color: status === 'Present' ? '#22c55e' : '#ef4444',
@@ -246,7 +361,8 @@ function App() {
                         borderRadius: '6px',
                         fontWeight: 600,
                         fontSize: '13px',
-                        cursor: 'pointer'
+                        cursor: isActionDisabled ? 'not-allowed' : 'pointer',
+                        opacity: isActionDisabled ? 0.6 : 1
                       }}
                     >
                       {status}
